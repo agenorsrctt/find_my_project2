@@ -17,7 +17,7 @@ export async function alterUserRepository(data: AlterUserDto, id: number) {
     if(data.email) { fields.push("email"), values.push(data.email)}
     if(data.password) { fields.push("password"), values.push(data.password)}
     if(data.type) { fields.push("type"), values.push(data.type)}
-    if(data.organization_id) { fields.push("organization_id"), values.push(data.organization_id)}
+    if(data.organization_id !== undefined) { fields.push("organization_id"), values.push(data.organization_id)}
 
     const placeholders = fields.map(field => `${field} = ?`)
 

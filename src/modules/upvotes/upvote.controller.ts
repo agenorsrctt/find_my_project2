@@ -36,7 +36,8 @@ export async function findUpvoteController(req: Request, res: Response){
 export async function deleteUpvoteController(req: Request, res: Response) {
     try {
         const id = Number(req.params.id);
-        const upvote = await deleteUpvoteService(id);
+        const user_id = res.locals.user.id;
+        const upvote = await deleteUpvoteService(user_id, id);
         res.status(200).json({
             message: "UpVote deletado com sucesso!",
             upvote

@@ -42,7 +42,7 @@ export async function findUpvoteService(id: number) {
 }
 
 
-export async function deleteUpvoteService(id: number) {
+export async function deleteUpvoteService(user_id: number, id: number) {
     if(!Number.isInteger(id) || id <= 0){
         throw new Error("Upvote não identificado.")
     }
@@ -50,6 +50,10 @@ export async function deleteUpvoteService(id: number) {
     const upvote = await findUpvoteRepository(id);
     if(!upvote){
         throw new Error("UpVote não encontrado.")
+    }
+
+    if(upvote.user_id !== user_id){
+        throw new Error("Usuário não autorizado.")
     }
 
     return await deleteUpvoteRepository(id);

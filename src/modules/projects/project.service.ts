@@ -57,7 +57,6 @@ export async function createProjectService(data: CreateProjectDto) {
 
 export async function alterProjectService(data: AlterProjectDto, id: number) {
     dataNull(data);
-    errorID(data.id);
     errorID(id);
     await findError(id);
     data.user_id && errorID(data.user_id);
