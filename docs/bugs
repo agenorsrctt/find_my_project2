@@ -653,7 +653,7 @@ O SQL gerado atualmente é válido, portanto isso não é considerado um bug cr�
 # Ordem recomendada de correção
 
 - [x] 1. Corrigir `Number.isInteger()` em `generatedToken()`
-- [ ] 2. Criar `JWT_SECRET`
+- [x] 2. Criar `JWT_SECRET`
 - [x] 3. Retornar o token no login
 - [x] 4. Corrigir validação `Bearer`
 - [x] 5. Corrigir validação de ID do `superAdmin`
@@ -671,7 +671,6 @@ O SQL gerado atualmente é válido, portanto isso não é considerado um bug cr�
 - [x] 17. Proteger rotas com autenticação
 - [x] 18. Retirar `user_id` do body da criação de projeto
 - [x] 19. Remover `id` dos DTOs de criação
-- [ ] 20. Simplificar placeholders
 
 ---
 
@@ -679,10 +678,10 @@ O SQL gerado atualmente é válido, portanto isso não é considerado um bug cr�
 
 Depois dessas correções, o próximo foco deve ser:
 
-1. Consolidar autenticação e autorização.
-2. Definir exatamente quais tipos de usuário podem executar cada operação.
-3. Garantir que projetos só sejam alterados pelo responsável ou `superAdmin`.
-4. Garantir que upvotes pertençam ao usuário autenticado.
+1. [x] Consolidar autenticação e autorização. 
+2. [x] Definir exatamente quais tipos de usuário podem executar cada operação.
+3. [x] Garantir que projetos só sejam alterados pelo responsável ou `superAdmin`. 
+4. [x] Garantir que upvotes pertençam ao usuário autenticado. 
 5. Implementar `project_imgs`.
 6. Implementar `technologies`.
 7. Criar listagem/ranking de projetos por quantidade de upvotes.

@@ -3,7 +3,8 @@ import { findUserRepository } from "../users/user.repository.js";
 import { 
     createUpvoteRepository,
     findUpvoteRepository,
-    deleteUpvoteRepository
+    deleteUpvoteRepository,
+    countVoteRepository
 } from "./upvote.repository.js";
 
 export async function createUpvoteService(project_id: number, user_id: number) {
@@ -57,4 +58,17 @@ export async function deleteUpvoteService(user_id: number, id: number) {
     }
 
     return await deleteUpvoteRepository(id);
+}
+
+
+export async function countUpvoteService() {
+    
+    const count = await countVoteRepository();
+
+    if(count.length <= 0){
+        throw new Error("Nenhum upvote contabilizado.")
+    }
+
+    return count;
+
 }

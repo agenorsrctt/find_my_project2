@@ -1,7 +1,8 @@
 import { 
     createUpvoteService,
     findUpvoteService,
-    deleteUpvoteService
+    deleteUpvoteService,
+    countUpvoteService
 } from "./upvote.service.js";
 import type { Request, Response } from "express";
 import { errorResponseGenerate } from "../utils/error.controller.js";
@@ -41,6 +42,18 @@ export async function deleteUpvoteController(req: Request, res: Response) {
         res.status(200).json({
             message: "UpVote deletado com sucesso!",
             upvote
+        })
+    } catch (error) {
+        errorResponseGenerate(req, res, error);
+    }
+}
+
+export async function countUpvoteController(req: Request, res: Response){
+    try {
+        const upvotes = await countUpvoteService();
+        res.status(200).json({
+            message: "Upvotes contados: ",
+            upvotes
         })
     } catch (error) {
         errorResponseGenerate(req, res, error);

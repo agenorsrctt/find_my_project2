@@ -18,3 +18,14 @@ export async function deleteUpvoteRepository(id: number) {
     const [result] = await db.execute<ResultSetHeader>(sql, [id]);
     return result.affectedRows;
 }
+
+export async function countVoteRepository() {
+    const sql = `
+        select project_id, count(*) as upvotes 
+        from upvotes 
+        group by project_id 
+        order by upvotes desc
+    `
+    const [result] = await db.execute<RowDataPacket[]>(sql);
+    return result;
+}
