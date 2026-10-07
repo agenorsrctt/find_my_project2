@@ -1,12 +1,11 @@
-export type TypeUser = "stundent" | "admin" | "visitation" | "superAdmin"
+export type TypeUser = "student" | "admin" | "visitation" | "superAdmin"
 
 export interface CreateUserDto {
-    readonly id: number;
     user: string;
     email: string;
     password: string;
     type: TypeUser;
-    organization_id: number
+    organization_id: number | null
 }
 
 export interface AlterUserDto {
@@ -15,5 +14,5 @@ export interface AlterUserDto {
     email?: string;
     password?: string;
     type?: TypeUser;
-    organization_id?: number
+    organization_id?: number | null
 }

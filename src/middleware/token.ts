@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 export async function generatedToken(email: string, id: number) {
 
-    if(Number.isInteger(id) || id <= 0){
+    if(!Number.isInteger(id) || id <= 0){
         throw new Error("ID não localizada.")
     }
 

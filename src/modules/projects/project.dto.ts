@@ -1,5 +1,4 @@
 export interface CreateProjectDto {
-    readonly id: number;
     project: string;
     description: string;
     user_id: number;

@@ -1,0 +1,701 @@
+# Find My Project 2 — Revisão do Backend
+
+Este documento registra os principais erros encontrados na revisão do backend do projeto **Find My Project 2**, além da ordem recomendada para correção.
+
+## Status atual
+
+O projeto está aproximadamente **65–70% concluído considerando o backend/MVP atual**.
+
+A arquitetura principal está organizada seguindo o fluxo:
+
+`Route → Controller → Service → Repository → Database`
+
+Já existem:
+
+- CRUD de usuários
+- CRUD de organizações
+- CRUD de projetos
+- Sistema de upvotes
+- Login
+- Hash de senhas com bcrypt
+- JWT
+- Middleware de autenticação
+- Autorização de `superAdmin`
+- Tabelas para imagens dos projetos
+- Tabelas para tecnologias
+
+O foco agora deve ser corrigir autenticação/autorização, validações e integrar corretamente o usuário autenticado às operações.
+
+---
+
+# 1. Corrigir validação de ID na geração do token
+
+**Arquivo:** `src/middleware/token.ts`
+
+### Atual
+
+```ts
+if (Number.isInteger(id) || id <= 0) {
+    throw new Error("ID não localizada.");
+}
+```
+
+Um ID válido, como `1`, faz `Number.isInteger(1)` retornar `true`, causando erro.
+
+### Corrigir para
+
+```ts
+if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("ID não localizado.");
+}
+```
+
+**Prioridade:** CRÍTICA
+
+---
+
+# 2. Criar segredo específico para JWT
+
+**Arquivo:** `src/middleware/token.ts`
+
+### Atual
+
+```ts
+const secret = process.env.DB_PASSWORD;
+```
+
+A senha do banco de dados não deve ser utilizada como segredo JWT.
+
+### `.env`
+
+```env
+JWT_SECRET=sua_chave_secreta
+```
+
+### Código
+
+```ts
+const secret = process.env.JWT_SECRET;
+```
+
+**Prioridade:** ALTA
+
+---
+
+# 3. Retornar token no login
+
+**Arquivo:** `src/modules/login/login.controller.ts`
+
+Atualmente o token retornado pelo `loginService()` é ignorado.
+
+### Atual
+
+```ts
+await loginService(email, senha);
+
+res.status(200).json({
+    message: "Login aprovado.",
+    next
+});
+```
+
+### Corrigir para
+
+```ts
+const token = await loginService(email, senha);
+
+res.status(200).json({
+    message: "Login aprovado.",
+    token
+});
+```
+
+Não é necessário enviar `next` no JSON.
+
+**Prioridade:** CRÍTICA
+
+---
+
+# 4. Corrigir validação do Bearer Token
+
+**Arquivo:** `src/middleware/auth.ts`
+
+### Atual
+
+```ts
+if (!tipo || !token && tipo !== "Bearer")
+```
+
+A condição não valida corretamente o formato do header.
+
+### Corrigir para
+
+```ts
+if (tipo !== "Bearer" || !token) {
+    return res.status(401).json({
+        message: "Autorização não identificada."
+    });
+}
+```
+
+**Prioridade:** ALTA
+
+---
+
+# 5. Corrigir validação do ID do superAdmin
+
+**Arquivo:** `src/middleware/auth.ts`
+
+### Atual
+
+```ts
+if (Number.isInteger(user_id) || user_id <= 0) {
+```
+
+### Corrigir para
+
+```ts
+if (!Number.isInteger(user_id) || user_id <= 0) {
+```
+
+O código atual rejeita IDs válidos.
+
+**Prioridade:** CRÍTICA
+
+---
+
+# 6. Chamar `next()` na autorização do superAdmin
+
+**Arquivo:** `src/middleware/auth.ts`
+
+Atualmente o middleware responde uma requisição:
+
+```ts
+res.status(200).json({
+    message: "Usuário autenticado com sucesso!",
+    next
+});
+```
+
+Isso impede a requisição de continuar para o controller.
+
+### Corrigir para
+
+```ts
+if (user.type !== "superAdmin") {
+    return res.status(403).json({
+        message: "Usuário não autorizado."
+    });
+}
+
+return next();
+```
+
+**Prioridade:** CRÍTICA
+
+---
+
+# 7. Corrigir `stundent` para `student`
+
+**Arquivos relacionados a usuários**
+
+O banco possui:
+
+```sql
+enum('student', 'admin', 'visitation', 'superAdmin')
+```
+
+Porém o TypeScript possui:
+
+```ts
+export type TypeUser =
+    "stundent" |
+    "admin" |
+    "visitation" |
+    "superAdmin";
+```
+
+Existe um erro de escrita:
+
+```text
+stundent
+```
+
+Deve ser:
+
+```text
+student
+```
+
+### Corrigir para
+
+```ts
+export type TypeUser =
+    "student" |
+    "admin" |
+    "visitation" |
+    "superAdmin";
+```
+
+Também substituir todas as outras ocorrências de `"stundent"`.
+
+**Prioridade:** CRÍTICA
+
+---
+
+# 8. Corrigir atribuição de `organization_id`
+
+**Arquivo:** `src/modules/users/user.service.ts`
+
+### Atual
+
+```ts
+data.organization_id === null;
+```
+
+`===` realiza uma comparação e não altera o valor.
+
+### Correto
+
+```ts
+data.organization_id = null;
+```
+
+O DTO também deverá aceitar `null`.
+
+### CreateUserDto
+
+```ts
+organization_id: number | null;
+```
+
+### AlterUserDto
+
+```ts
+organization_id?: number | null;
+```
+
+**Prioridade:** ALTA
+
+---
+
+# 9. Permitir visitante sem organização
+
+O banco permite:
+
+```sql
+organization_id int null
+```
+
+Porém `createUserService()` atualmente exige uma organização válida antes de verificar o tipo do usuário.
+
+Um visitante com:
+
+```json
+{
+    "organization_id": null
+}
+```
+
+será rejeitado.
+
+A validação de organização deve ocorrer somente para os tipos que realmente precisam estar vinculados a uma organização.
+
+**Prioridade:** ALTA
+
+---
+
+# 10. Corrigir validação de tipo no `alterUserService`
+
+### Atual
+
+```ts
+if (
+    data.type &&
+    !data.type.trim() &&
+    data.type !== "admin" &&
+    data.type !== "stundent" &&
+    data.type !== "visitation"
+) {
+    throw new Error("Tipo não permitindo.");
+}
+```
+
+A condição praticamente nunca identifica um tipo inválido.
+
+### Exemplo de correção
+
+```ts
+if (
+    data.type &&
+    data.type !== "admin" &&
+    data.type !== "student" &&
+    data.type !== "visitation"
+) {
+    throw new Error("Tipo não permitido.");
+}
+```
+
+O `superAdmin` pode continuar sendo tratado separadamente.
+
+**Prioridade:** ALTA
+
+---
+
+# 11. Corrigir PATCH de usuário
+
+A rota utiliza:
+
+```http
+PATCH /user/:id
+```
+
+Porém o service exige nome, email e senha simultaneamente.
+
+Isso impede alterações parciais.
+
+Por exemplo:
+
+```json
+{
+    "user": "Agenor"
+}
+```
+
+deveria ser válido.
+
+### Validação recomendada
+
+```ts
+if (data.user !== undefined && !data.user.trim()) {
+    throw new Error("Nome não permitido.");
+}
+
+if (data.email !== undefined && !data.email.trim()) {
+    throw new Error("E-mail inválido.");
+}
+
+if (data.password !== undefined && !data.password.trim()) {
+    throw new Error("Senha inválida.");
+}
+```
+
+**Prioridade:** ALTA
+
+---
+
+# 12. Corrigir PATCH de organização
+
+Atualmente:
+
+```ts
+if (!data.organization?.trim() || !data.cnpj?.trim()) {
+    throw new Error("Erro: Nenhum campo preenchido.");
+}
+```
+
+Isso exige que os dois campos sejam enviados.
+
+Como é um `PATCH`, deve ser possível alterar apenas um.
+
+### Exemplo
+
+```ts
+if (
+    data.organization === undefined &&
+    data.cnpj === undefined
+) {
+    throw new Error("Erro: Nenhum campo preenchido.");
+}
+```
+
+Depois cada campo deve ser validado individualmente.
+
+**Prioridade:** MÉDIA/ALTA
+
+---
+
+# 13. Adicionar `await` no `findUpvoteService`
+
+**Arquivo:** `src/modules/upvotes/upvote.service.ts`
+
+### Atual
+
+```ts
+const upvote = findUpvoteRepository(id);
+
+if (!upvote) {
+    throw new Error("UpVote não encontrado.");
+}
+```
+
+`findUpvoteRepository()` retorna uma Promise.
+
+### Corrigir para
+
+```ts
+const upvote = await findUpvoteRepository(id);
+
+if (!upvote) {
+    throw new Error("UpVote não encontrado.");
+}
+```
+
+**Prioridade:** ALTA
+
+---
+
+# 14. Adicionar `await` no `deleteUpvoteService`
+
+O mesmo problema existe no delete.
+
+### Atual
+
+```ts
+const upvote = findUpvoteRepository(id);
+```
+
+### Correto
+
+```ts
+const upvote = await findUpvoteRepository(id);
+```
+
+**Prioridade:** ALTA
+
+---
+
+# 15. Usar `findUpvoteService` no controller
+
+Atualmente o controller acessa diretamente:
+
+```ts
+await findUpvoteRepository(id);
+```
+
+Isso ignora as validações criadas no service.
+
+### Melhor
+
+```ts
+const upvote = await findUpvoteService(id);
+
+res.status(200).json({
+    message: "UpVote encontrado com sucesso!",
+    upvote
+});
+```
+
+O fluxo deve permanecer:
+
+```text
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Database
+```
+
+**Prioridade:** MÉDIA
+
+---
+
+# 16. Não receber `user_id` pelo body do upvote
+
+### Atual
+
+```ts
+const { project_id, user_id } = req.body;
+```
+
+Isso permite que alguém tente votar utilizando o ID de outro usuário.
+
+Exemplo:
+
+```json
+{
+    "project_id": 2,
+    "user_id": 7
+}
+```
+
+O ID deve vir do JWT.
+
+### Melhor
+
+```ts
+const { project_id } = req.body;
+const user_id = res.locals.user.id;
+```
+
+**Prioridade:** CRÍTICA / SEGURANÇA
+
+---
+
+# 17. Adicionar autenticação às rotas protegidas
+
+O middleware de autenticação existe, mas precisa ser integrado às rotas que exigem login.
+
+Exemplo:
+
+```ts
+upvoteRouter.post(
+    "/",
+    authentication,
+    createUpvoteController
+);
+```
+
+O mesmo conceito deve ser utilizado em criação/alteração de projetos e demais operações protegidas.
+
+**Prioridade:** CRÍTICA / SEGURANÇA
+
+---
+
+# 18. Não receber `user_id` do body ao criar projeto
+
+O responsável pelo projeto deve ser obtido através do usuário autenticado.
+
+Em vez de confiar em:
+
+```ts
+data.user_id
+```
+
+o controller pode montar:
+
+```ts
+const data = {
+    ...req.body,
+    user_id: res.locals.user.id
+};
+```
+
+Assim um usuário não consegue criar um projeto em nome de outro usuário.
+
+**Prioridade:** CRÍTICA / SEGURANÇA
+
+---
+
+# 19. Remover `id` dos DTOs de criação
+
+Atualmente existem DTOs como:
+
+```ts
+export interface CreateProjectDto {
+    readonly id: number;
+```
+
+Porém o banco utiliza:
+
+```sql
+id int auto_increment primary key
+```
+
+O cliente não deve fornecer o ID.
+
+### Exemplo
+
+```ts
+export interface CreateProjectDto {
+    project: string;
+    description: string;
+    user_id: number;
+    github_url: string;
+    cover_img_url: string;
+}
+```
+
+Aplicar o mesmo princípio a:
+
+- `CreateUserDto`
+- `CreateOrganizationDto`
+- outros DTOs de criação
+
+Isso também permite remover validações como:
+
+```ts
+errorID(data.id);
+```
+
+durante criação.
+
+**Prioridade:** MÉDIA
+
+---
+
+# 20. Simplificar placeholders do projeto
+
+**Arquivo:** `src/modules/projects/project.repository.ts`
+
+### Atual
+
+```ts
+const placeholders = field.map(f => f = "?");
+```
+
+Funciona, mas a atribuição não é necessária.
+
+### Melhor
+
+```ts
+const placeholders = field.map(() => "?");
+```
+
+O SQL gerado atualmente é válido, portanto isso não é considerado um bug crítico.
+
+**Prioridade:** BAIXA
+
+---
+
+# Ordem recomendada de correção
+
+- [x] 1. Corrigir `Number.isInteger()` em `generatedToken()`
+- [ ] 2. Criar `JWT_SECRET`
+- [x] 3. Retornar o token no login
+- [x] 4. Corrigir validação `Bearer`
+- [x] 5. Corrigir validação de ID do `superAdmin`
+- [x] 6. Fazer `authorizationSuperAdmin()` chamar `next()`
+- [x] 7. Corrigir `stundent` → `student`
+- [x] 8. Corrigir `organization_id === null`
+- [x] 9. Permitir visitante com organização `null`
+- [x] 10. Corrigir validação de tipos
+- [x] 11. Corrigir PATCH de usuário
+- [x] 12. Corrigir PATCH de organização
+- [x] 13. Adicionar `await` no `findUpvoteService`
+- [x] 14. Adicionar `await` no `deleteUpvoteService`
+- [x] 15. Usar service no controller de upvote
+- [x] 16. Retirar `user_id` do body do upvote
+- [x] 17. Proteger rotas com autenticação
+- [x] 18. Retirar `user_id` do body da criação de projeto
+- [x] 19. Remover `id` dos DTOs de criação
+- [ ] 20. Simplificar placeholders
+
+---
+
+# Próxima etapa
+
+Depois dessas correções, o próximo foco deve ser:
+
+1. Consolidar autenticação e autorização.
+2. Definir exatamente quais tipos de usuário podem executar cada operação.
+3. Garantir que projetos só sejam alterados pelo responsável ou `superAdmin`.
+4. Garantir que upvotes pertençam ao usuário autenticado.
+5. Implementar `project_imgs`.
+6. Implementar `technologies`.
+7. Criar listagem/ranking de projetos por quantidade de upvotes.
+8. Revisar regras de exclusão e Foreign Keys.
+9. Padronizar códigos HTTP e tratamento de erros.
+10. Testar o fluxo completo: cadastro → login → token → projeto → upvote.
+
+---
+
+## Progresso estimado
+
+**Backend/MVP: aproximadamente 65–70%.**
+
+A base do sistema já está construída. O próximo avanço importante não é adicionar muitas funcionalidades novas, mas tornar as funcionalidades existentes seguras e integradas corretamente.
+
+Após concluir esta lista, deve ser feita uma nova revisão antes de avançar para as próximas funcionalidades.

@@ -1,5 +1,4 @@
 export interface CreateOrganizationDto {
-    readonly id: number;
     organization: string;
     cnpj: string
 }

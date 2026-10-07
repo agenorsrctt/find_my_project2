@@ -14,7 +14,7 @@ export async function authentication(req: Request, res: Response, next: NextFunc
         }
 
         const [tipo, token] = auth.split(" ");
-        if (!tipo || !token && tipo !== "Bearer") {
+        if (tipo !== "Bearer" && !token) {
             return res.status(401).json({
                 message: "Autorização não identificada."
             })
@@ -35,9 +35,9 @@ export async function authorizationSuperAdmin(req: Request, res: Response, next:
     try {
 
         const user_id = res.locals.user.id;
-        if(Number.isInteger(user_id) || user_id <= 0){
+        if(!Number.isInteger(user_id) || user_id <= 0){
             return res.status(403).json({
-                message: "Usuario não encontrado."
+                message: "Usuario não encontrado.",
             })
         }
         
@@ -52,8 +52,9 @@ export async function authorizationSuperAdmin(req: Request, res: Response, next:
 
         res.status(200).json({
             message: "Usuário autenticado com sucesso!",
-            next
         })
+
+        return next();
 
     } catch (error) {
         errorResponseGenerate(req, res, error)

@@ -8,13 +8,15 @@ export async function createUserService(data: CreateUserDto) {
         throw new Error("É necessário preencher os dados.")
     }
 
-    if (!Number.isInteger(data.organization_id) || data.organization_id <= 0) {
-        throw new Error("Organização inválida")
-    }
+    if (data.organization_id) {
+        if (!Number.isInteger(data.organization_id) || data.organization_id <= 0) {
+            throw new Error("Organização inválida")
+        }
 
-    const organization = await findOrganizationService(data.organization_id);
-    if (!organization) {
-        throw new Error("Organização não encontrada.")
+        const organization = await findOrganizationService(data.organization_id);
+        if (!organization) {
+            throw new Error("Organização não encontrada.")
+        }
     }
 
     const email = await findEmailUserRepository(data.email);
@@ -31,7 +33,7 @@ export async function createUserService(data: CreateUserDto) {
     }
 
     if (data.organization_id) {
-        if (data.type !== "admin" && data.type !== "stundent") {
+        if (data.type !== "admin" && data.type !== "student") {
             throw new Error("Tipo não permitido.")
         }
     }
@@ -60,24 +62,26 @@ export async function alterUserService(data: AlterUserDto, id: number) {
         throw new Error("Você não tem permissão.")
     }
 
-    if (!data.user?.trim()) {
+    if (data.user !== undefined && !data.user?.trim()) {
         throw new Error("Nome não permitido.")
     }
 
-    if (!data.email?.trim()) {
+    if (data.email !== undefined &&!data.email?.trim()) {
         throw new Error("E-mail inválido.")
     }
 
-    if (!data.password?.trim()) {
+    if (data.password !== undefined &&!data.password?.trim()) {
         throw new Error("Senha inválida.")
     }
 
-    if (data.type && !data.type.trim() && data.type !== "admin" && data.type !== "stundent" && data.type !== "visitation") {
+    if (data.type && data.type !== "admin" && data.type !== "student" && data.type !== "visitation") {
         throw new Error("Tipo não permitindo.")
     }
 
-    if (data.organization_id !== undefined && Number.isInteger(data.organization_id) && data.organization_id <= 0) {
-        throw new Error("Organização não encontrada.")
+    if (data.organization_id) {
+        if (Number.isInteger(data.organization_id) && data.organization_id <= 0) {
+            throw new Error("Organização não encontrada.")
+        }
     }
 
     if (data.type === "visitation") {

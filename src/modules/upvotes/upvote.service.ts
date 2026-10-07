@@ -33,7 +33,7 @@ export async function findUpvoteService(id: number) {
         throw new Error("Upvote não identificado.")
     }
 
-    const upvote = findUpvoteRepository(id);
+    const upvote = await findUpvoteRepository(id);
     if(!upvote){
         throw new Error("UpVote não encontrado.")
     }
@@ -47,7 +47,7 @@ export async function deleteUpvoteService(id: number) {
         throw new Error("Upvote não identificado.")
     }
 
-    const upvote = findUpvoteRepository(id);
+    const upvote = await findUpvoteRepository(id);
     if(!upvote){
         throw new Error("UpVote não encontrado.")
     }

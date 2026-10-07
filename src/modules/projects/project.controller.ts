@@ -12,7 +12,10 @@ import {
 
 export async function createProjeController(req: Request, res: Response) {
     try {
-        const data = req.body;
+        const data = {
+            ...req.body,
+            user_id: res.locals.user.id
+        }
         const lastID = await createProjectService(data);
         const project = await findProjectService(lastID);
         res.status(201).json({

@@ -46,7 +46,6 @@ async function findError(id: number) {
 
 export async function createProjectService(data: CreateProjectDto) {
     dataNull(data);
-    errorID(data.id);
     errorID(data.user_id);
     stringNull(data.description);
     stringNull(data.cover_img_url);

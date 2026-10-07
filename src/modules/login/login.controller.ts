@@ -6,10 +6,10 @@ import { loginService } from "./login.service.js"
 export async function loginController(req: Request, res: Response, next: NextFunction) {
     try {
         const {email, senha} = req.body
-        await loginService(email, senha);
+        const token = await loginService(email, senha);
         res.status(200).json({
             message: "Login aprovado.",
-            next
+            token
         })
     } catch (error) {
         errorResponseGenerate(req, res, error);
