@@ -11,7 +11,7 @@ export async function createOrganizationRepository(data: CreateOrganizationDto) 
 export async function alterOrganizationRepository(data: AlterOrganizationDto, id: number) {
     const fields = [];
     const values = [];
-    if (data.organization) {
+    if (data.organization !== undefined) {
         fields.push("organization")
         values.push(data.organization)
     }

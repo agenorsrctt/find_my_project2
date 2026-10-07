@@ -14,7 +14,7 @@ export async function authentication(req: Request, res: Response, next: NextFunc
         }
 
         const [tipo, token] = auth.split(" ");
-        if (tipo !== "Bearer" && !token) {
+        if (tipo !== "Bearer" || !token) {
             return res.status(401).json({
                 message: "Autorização não identificada."
             })
@@ -26,6 +26,7 @@ export async function authentication(req: Request, res: Response, next: NextFunc
         }
 
         return next();
+        
     } catch (error) {
         errorResponseGenerate(req, res, error)
     }
@@ -49,10 +50,6 @@ export async function authorizationSuperAdmin(req: Request, res: Response, next:
         if(user.type != "superAdmin"){
             throw new Error("Usuário não autenticado.")
         }
-
-        res.status(200).json({
-            message: "Usuário autenticado com sucesso!",
-        })
 
         return next();
 

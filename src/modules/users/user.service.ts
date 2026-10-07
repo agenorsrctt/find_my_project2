@@ -29,7 +29,7 @@ export async function createUserService(data: CreateUserDto) {
     }
 
     if (data.type === "visitation") {
-        data.organization_id === null;
+        data.organization_id = null;
     }
 
     if (data.organization_id) {
@@ -85,7 +85,7 @@ export async function alterUserService(data: AlterUserDto, id: number) {
     }
 
     if (data.type === "visitation") {
-        data.organization_id === null;
+        data.organization_id = null;
     }
 
     if (data.password) {

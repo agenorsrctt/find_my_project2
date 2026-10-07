@@ -24,7 +24,7 @@ export async function generatedToken(email: string, id: number) {
 }
 
 export async function verifyToken(token: string) {
-    const secret = process.env.DB_PASSWORD;
+    const secret = process.env.JWT_SECRET;
     if(!secret){
         throw new Error("Segredo não localizado.")
     }
