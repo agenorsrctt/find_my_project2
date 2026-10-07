@@ -68,14 +68,18 @@ export async function alterProjectService(data: AlterProjectDto, id: number) {
     return alterProjectRepository(data, id);
 }
 
-export async function deleteProjectService(id: number) {
+export async function deleteProjectService(user_id: number, id: number) {
     errorID(id);
     await findError(id);
+
+    errorID(user_id);
+
+
 
     return deleteProjectRepository(id);
 }
 
-export async function findProjectService(id: number) {
+export async function findProjectService(user_id: number, id: number) {
     errorID(id);
     await findError(id);
 
