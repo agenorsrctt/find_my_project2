@@ -18,7 +18,7 @@ export async function createProjeController(req: Request, res: Response) {
         }
         const user_id =  res.locals.user.id
         const lastID = await createProjectService(data);
-        const project = await findProjectService(user_id, lastID);
+        const project = await findProjectService(lastID);
         res.status(201).json({
             message: "Projeto criado com sucesso!",
             project: project
@@ -37,7 +37,7 @@ export async function alterProjectController(req: Request, res: Response) {
         }
         const user_id =  res.locals.user.id
         await alterProjectService(data, id);
-        const project = await findProjectService(user_id, id);
+        const project = await findProjectService(id);
         res.status(201).json({
             message: "Projeto alterado com sucesso!",
             project: project
@@ -51,7 +51,7 @@ export async function deleteProjectController(req: Request, res: Response) {
     try {
         const id = Number(req.params.id);
         const user_id =  res.locals.user.id
-        const project = await findProjectService(user_id, id);
+        const project = await findProjectService(id);
         await deleteProjectService(user_id, id);
         res.status(201).json({
             message: "Projeto deletado com sucesso!",
@@ -65,8 +65,7 @@ export async function deleteProjectController(req: Request, res: Response) {
 export async function findProjectController(req: Request, res: Response) {
     try {
         const id = Number(req.params.id);
-        const user_id =  res.locals.user.id
-        const project = await findProjectService(user_id, id);
+        const project = await findProjectService(id);
         res.status(201).json({
             message: "Projeto encontrado com sucesso!",
             project: project

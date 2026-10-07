@@ -65,6 +65,17 @@ export async function alterProjectService(data: AlterProjectDto, id: number) {
     data.github_url && stringNull(data.github_url);
     data.project && stringNull(data.project);
 
+    const project = await findProjectRepository(id);
+    if (!project) {
+        throw new Error("Projeto não encontrado.");
+    }
+
+    if (project !== undefined) {
+        if (project.user_id !== data.user_id) {
+            throw new Error("Usuário não autorizado.");
+        }
+    }
+
     return alterProjectRepository(data, id);
 }
 
@@ -74,12 +85,21 @@ export async function deleteProjectService(user_id: number, id: number) {
 
     errorID(user_id);
 
+    const project = await findProjectRepository(id);
+    if (!project) {
+        throw new Error("Projeto não encontrado.");
+    }
 
+    if (project !== undefined) {
+        if (project.user_id !== user_id) {
+            throw new Error("Usuário não autorizado.");
+        }
+    }
 
     return deleteProjectRepository(id);
 }
 
-export async function findProjectService(user_id: number, id: number) {
+export async function findProjectService(id: number) {
     errorID(id);
     await findError(id);
 
